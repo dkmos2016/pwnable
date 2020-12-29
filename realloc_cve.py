@@ -63,7 +63,7 @@ if not DEBUG:
   elf = ELF('/home/len/pwnable/libc.so.6')  
   
 
-context.log_level = 'debug'
+context.log_level = 'info'
 atoll_got = 0x404048
 printf_plt = 0x401070
 libc_offset = 0x12e009
