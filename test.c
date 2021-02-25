@@ -1,10 +1,11 @@
 
 
 #include <stdio.h>
+#include <stdlib.h>
 
 int main()
 {
-    printf("Result: %c\n", 0xcd < 0x31
-                               ? '1'
-                               : '0');
+    printf("hello world!%s", "%p");
+    free(NULL);
+    return 0; 
 }

@@ -1,8 +1,8 @@
 from pwn import *
 import pdb
 
-# p = remote('chall.pwnable.tw', 10202)
-p = process('/home/len/pwnable/starbound.bak')
+p = remote('chall.pwnable.tw', 10202)
+# p = process('/home/len/pwnable/starbound.bak')
 
 
 def set_name(name):
