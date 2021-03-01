@@ -5,7 +5,9 @@
 
 int main()
 {
+    char *sh = "/bin/sh";
     printf("hello world!%s", "%p");
-    free(NULL);
+
+    system(sh);
     return 0; 
 }

