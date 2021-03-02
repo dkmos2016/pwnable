@@ -16,16 +16,30 @@ int menu()
     return 0;
 }
 
+int get_size(char *buf, int maxsize) {
+    int i = 0;
+    for (i = 0; i < maxsize; i++) {
+        if (buf[i] == '\n') {
+            break;
+        }
+    }
+
+    return i;
+}
+
 int create_socket(char *ip, int port)
 {
     int sock_fd;
     struct sockaddr_in serv_addr;
+    int timeout = 1000;
 
     if ((sock_fd = socket(AF_INET, SOCK_STREAM, 0)) == -1)
     {
         printf("create socket failed\n");
         return -1;
     }
+
+    setsockopt(sock_fd, SOL_SOCKET, SO_RCVTIMEO, (char*)&timeout, sizeof(int));
 
     bzero(&serv_addr, sizeof(serv_addr));
 
@@ -48,16 +62,36 @@ int recvuntil(int fd, char *eof)
 {
     int i = 0;
     char tmp;
+    int count = 0;
     bzero(BUF, MAXSIZE);
     for (i = 0; i < MAXSIZE; i++)
     {
-        recv(fd, BUF + i, 1, 0);
-        if (strstr(BUF, eof))
+        count = recv(fd, BUF + i, 1, 0);
+        printf("count: %d, BUF: %s\n", count, BUF);
+        if (strstr(BUF, eof) || count == -1)
         {
             break;
         }
     }
     return i;
+}
+
+int recvline(int fd)
+{
+    int i = 0;
+    char tmp;
+
+    bzero(BUF, MAXSIZE);
+    for (i = 0; i < MAXSIZE; i++)
+    {
+        recv(fd, BUF + i, 1, 0);
+        if (BUF[i] == '\n')
+        {
+            break;
+        }
+    }
+    
+    return BUF;
 }
 
 int sendline(int fd, char cont[], int size)
@@ -68,7 +102,7 @@ int sendline(int fd, char cont[], int size)
     for (i = 0; i < size; i++)
     {
         write(fd, cont + i, 1);
-        if (cont[i] == '\x0a')
+        if (cont[i] == '\n')
         {
             flag = 1;
             break;
@@ -77,7 +111,7 @@ int sendline(int fd, char cont[], int size)
 
     if (!flag)
     {
-        write(fd, "\x0a", 1);
+        write(fd, "\n", 1);
         i++;
     }
 
